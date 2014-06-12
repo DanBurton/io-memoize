@@ -1,29 +1,31 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Control.Concurrent.Cache (Cache, newCache, fetch) where
 
 import Control.Concurrent.MVar
-import Data.IORef
+import Control.Monad (liftM)
+import Data.Data
+import Data.Typeable
 
--- | A thread-safe write-once cache.
-newtype Cache a = Cache {
-  -- | Fetch the value stored in the cache,
-  -- or call the supplied fallback and store the result,
-  -- if the cache is empty.
-  fetch :: IO a -> IO a
-}
+-- | A thread-safe write-once cache. If you need more functionality,
+-- (e.g. multiple write, cache clearing) use an 'MVar' instead.
+newtype Cache a = Cache (MVar (Maybe a))
+  deriving (Eq, Typeable)
+
+-- | Fetch the value stored in the cache,
+-- or call the supplied fallback and store the result,
+-- if the cache is empty.
+fetch :: Cache a -> IO a -> IO a
+fetch (Cache var) action = go where
+  go = readMVar var >>= \m -> case m of
+    Just a -> return a
+    Nothing -> do
+      modifyMVar_ var $ \m' -> case m' of
+        Just a -> return (Just a)
+        Nothing -> liftM Just action
+      go
 
 -- | Create an empty cache.
 newCache :: IO (Cache a)
 newCache = do
-  b <- newMVar True
-  r <- newIORef undefined
-  return (cache b r)
-
-cache :: MVar Bool -> IORef a -> Cache a
-cache b r = Cache $ \action -> do
-  modifyMVar_ b $ \isEmpty ->
-    if isEmpty
-      then do v <- action
-              writeIORef r v
-              return False
-      else return False
-  readIORef r
+  var <- newMVar Nothing
+  return (Cache var)
