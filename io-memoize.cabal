@@ -1,18 +1,16 @@
 name:                io-memoize
-version:             1.0.0.0
+version:             1.1.0.0
 synopsis:            Memoize IO actions
 description:
   Transform an IO action into a similar IO action
   that performs the original action only once.
   .
   You can choose to perform the original action
-  in one of three ways:
+  in one of two ways:
   .
   (1) lazily (might never be performed)
   .
-  (2) eagerly
-  .
-  (3) concurrently (eager)
+  (2) eagerly (concurrent)
   .
   Special thanks to shachaf and headprogrammingczar from #haskell irc
   for helping me reason about the behavior of this library.
@@ -22,7 +20,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Dan Burton
 maintainer:          danburton.email@gmail.com
-copyright:           (c) 2012 Dan Burton
+copyright:           (c) 2014 Dan Burton
 
 category:            System
 build-type:          Simple
@@ -30,8 +28,8 @@ cabal-version:       >=1.8
 
 library
   hs-source-dirs:    src
-  exposed-modules:   System.IO.Memoize
-  build-depends:     base == 4.*, spawn
+  exposed-modules:   System.IO.Memoize, Control.Concurrent.Cache
+  build-depends:     base == 4.*, async >= 2.0
   ghc-options:       -Wall
 
 source-repository head
