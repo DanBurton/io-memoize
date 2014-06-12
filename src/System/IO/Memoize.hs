@@ -20,7 +20,7 @@ module System.IO.Memoize (
   , ioMemoPar
   ) where
 
-import Control.Concurrent.Spawn
+import Control.Concurrent.Async (async, wait)
 import Control.Concurrent.MVar
 import Data.IORef
 
@@ -63,14 +63,13 @@ ioMemo' action = do
   return (return v)
 
 -- | Memoize an IO action.
--- The action will be performed immediately
--- in a spawned thread.
+-- The action will be performed immediately in a new thread.
 -- Attempts to access the result
 -- will block until the action is finished.
--- 
--- This is simply a synonym for 'Control.Concurrent.Spawn.spawn'
 ioMemoPar :: IO a -> IO (IO a)
-ioMemoPar = spawn
+ioMemoPar action = do
+  thread <- async action
+  return (wait thread)
 
 
 
