@@ -3,8 +3,7 @@ module Control.Concurrent.Cache (Cache, newCache, fetch) where
 
 import Control.Concurrent.MVar
 import Control.Monad (liftM)
-import Data.Data
-import Data.Typeable
+import Data.Typeable (Typeable)
 
 -- | A thread-safe write-once cache. If you need more functionality,
 -- (e.g. multiple write, cache clearing) use an 'MVar' instead.
