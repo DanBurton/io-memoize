@@ -12,12 +12,13 @@
 module System.IO.Memoize (
     once
   , eagerlyOnce
+  , withEagerlyOnce
   , ioMemo
   , ioMemo'
   , ioMemoPar
   ) where
 
-import Control.Concurrent.Async (async, wait)
+import Control.Concurrent.Async (async, withAsync, wait)
 import Control.Concurrent.Cache (newCache, fetch)
 
 -- | Memoize an IO action. The action will be performed
@@ -52,6 +53,17 @@ eagerlyOnce action = do
   thread <- async action
   return (wait thread)
 
+-- | Memoize an 'IO' action. @withEagerlyOnce act cont@ will immediately start
+-- a new thread to perform @act@. It will pass @cont@ an 'IO' action it can use
+-- to retrieve the result of @act@. Once @cont@ has completed, @act@ will be
+-- cancelled (using 'Control.Concurrent.Async.uninterruptibleCancel').  This
+-- prevents a thread from continuing to run indefinitely when its result is no
+-- longer needed.  The action passed to @cont@ should never be used after
+-- @cont@ has completed.  Like 'eagerlyOnce', if @act@ fails, then the same
+-- failure will be repeated on each attempted retrieval.
+withEagerlyOnce :: IO a -> (IO a -> IO b) -> IO b
+withEagerlyOnce action cont = withAsync action $ \thr ->
+  cont (wait thr)
 
 {-# DEPRECATED ioMemo' "Please just call the action directly." #-}
 -- | Memoize an IO action.
